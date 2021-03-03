@@ -66,6 +66,78 @@ get_file_name <- function(filename) {
   jpeg(filename= 'static/visuals/pheatmap.jpeg', units = "px", width = 4000, height = 2451, res = 300)
   pheatmap(corMatrix,annotation_col=sampleInfo)
   dev.off()
+  
+  ###heatmap for transcription factors activity###
+  
+  #set the variable names (rownames) of X to the gene names, get rid of 2 extra columns
+  X <- Table(gse)
+  geneNames <- as.character(X$IDENTIFIER)
+  
+  X <- exprs(eset)
+  rownames(X) <- geneNames
+  
+  #to make the results easier to interpret, we make an average of the genes that have multiple duplicates
+  #we use avereps() to make the average of the probes
+  #installed the limma library to use avereps()
+  Z<- avereps(X)
+  
+  #get rid of the rows containing empty values
+  Z<- Z[complete.cases(Z), ]  
+  
+  # keep only the 100 genes with the highest SD
+  #Y2 will include only 100 genes with higher SD across all samples
+  install.packages("matrixStats")     
+  library(matrixStats)
+  
+  # Add column with standard deviation for each gene
+  Y2<- Z
+  Y2<- transform(Y2, SD=apply(Y2,1, sd, na.rm = TRUE))
+  
+  # Sort rows by SD size
+  Y2<- Y2[with(Y2, order(-SD)),]
+  
+  # take top 100 genes
+  Y2<- head(Y2, 100)
+  
+  # remove the SD column
+  Y2<- Y2[1:(length(Y2)-1)]
+  
+  #converting table to a matrix
+  best100 <- as.matrix(Y2)
+  
+  Y3 <- t(best100)
+  
+  #Produce a heatmap only using the 100 genes with the highest SD  
+  # transpose 
+  library("gplots")
+  
+  Y3 <- data.matrix(Y3)
+  par(mar = c(0,0,0,0))
+  jpeg(filename= 'static/visuals/heatmap.jpeg', units = "px", width = 4000, height = 2451, res = 300)
+  heatmap.2(best100, scale="column", col=heat.colors(10), Colv=TRUE)
+  dev.off()
+  
+  
+  
+  
+  Y <- t(Z)
+ 
+  Mean <- colMeans(Y)
+  Zscore<- scale(Mean)
+  pvalue = 2*pnorm(abs(Zscore), lower.tail = F)
+  
+  
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
 }
 
 error_fix <- function() {
